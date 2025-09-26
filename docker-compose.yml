@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: playforyou_db
+      MYSQL_ROOT_PASSWORD: ROOT
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./PlayForYouApp
+    ports:
+      - "8082:8081"
+    environment:
+      # optional override; Spring will still use application.properties
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/playforyou_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ROOT
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./playForYou-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
